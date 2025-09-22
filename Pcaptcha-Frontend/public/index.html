@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Bot Detection Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800 text-center">
+            Behavioral & Environmental Data Capture
+        </h1>
+
+        <form id="userForm" class="space-y-4">
+            <div>
+                <label for="username" class="block text-gray-700 font-medium mb-1">Username:</label>
+                <input type="text" id="username" name="username" required 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+                <label for="email" class="block text-gray-700 font-medium mb-1">Email:</label>
+                <input type="email" id="email" name="email" required 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <button type="submit" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-300">
+                Submit
+            </button>
+        </form>
+        
+        <div id="statusMessage" class="mt-6 p-4 rounded-lg text-sm font-medium text-center hidden"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
