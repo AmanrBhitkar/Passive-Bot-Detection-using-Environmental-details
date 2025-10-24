@@ -15,7 +15,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*' // allow all origins, you can restrict if needed
+}));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -32,22 +34,28 @@ const dbName = 'botDetectionDB';
 const collectionName = 'behavioralData';
 let collection;
 
-// Connect once at server start
-async function connectToMongo() {
+// Start server only after DB is connected
+async function startServer() {
   try {
     await client.connect();
     collection = client.db(dbName).collection(collectionName);
     console.log('✅ Connected to MongoDB Atlas');
+
+    app.listen(PORT, () => {
+      console.log(`✅ Server running at http://localhost:${PORT}`);
+    });
   } catch (err) {
     console.error('❌ Error connecting to MongoDB:', err.message);
+    process.exit(1); // stop server if DB connection fails
   }
 }
 
-connectToMongo();
+startServer();
 
 // POST endpoint to collect data
 app.post('/collect', async (req, res) => {
   if (!collection) {
+    console.error('❌ Collection not initialized!');
     return res.status(500).json({ message: 'Database not connected' });
   }
 
@@ -80,8 +88,4 @@ app.get('/api/data', async (req, res) => {
 // Serve frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
