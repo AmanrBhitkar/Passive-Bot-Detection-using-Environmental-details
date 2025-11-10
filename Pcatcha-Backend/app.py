@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # allow frontend JS to send requests
+CORS(app, resources={r"/*": {"origins": ['*', 'https://passive-bot-detection-using-rfgb.onrender.com', 'https://passive-bot-detection-using-3qdu.onrender.com']}})  # allow frontend JS to send requests
 
 # MongoDB connection (you’ll set this in Railway as an env var)
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
