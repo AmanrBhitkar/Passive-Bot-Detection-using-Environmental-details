@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: '*' // allow all origins, you can restrict if needed
+  origin: ['*','https://passive-bot-detection-using-rfgb.onrender.com'] // allow all origins, you can restrict if needed
 }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
