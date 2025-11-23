@@ -1,3 +1,4 @@
+import axios from 'axios';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -21,29 +22,36 @@ const allowedOrigins = [
 ];
 
 // ✅ CORS configuration
-// CORS setup: strict in production, permissive in development/test when needed.
+// Debug info: log CORS-related env and allowed origins to help diagnose path-to-regexp errors
 const devAllowAll = (process.env.DEV_ALLOW_ALL_ORIGINS || '').toLowerCase();
-if (process.env.NODE_ENV === 'production' && devAllowAll !== 'true') {
-  app.use(
-    cors({
-      origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
-      methods: ['GET', 'POST', 'OPTIONS'],
-      allowedHeaders: ['Content-Type'],
-    })
-  );
+console.log('CORS debug -- NODE_ENV:', process.env.NODE_ENV, 'DEV_ALLOW_ALL_ORIGINS:', devAllowAll);
+console.log('CORS debug -- allowedOrigins:', allowedOrigins);
+try {
+  if (process.env.NODE_ENV === 'production' && devAllowAll !== 'true') {
+    app.use(
+      cors({
+        origin: function (origin, callback) {
+          if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
+        methods: ['GET', 'POST', 'OPTIONS'],
+        allowedHeaders: ['Content-Type'],
+      })
+    );
 
-  // explicit preflight handling for production
-  app.options('*', cors());
-} else {
-  // permissive CORS in non-production or when DEV_ALLOW_ALL_ORIGINS=true
-  app.use(cors());
-  console.log('CORS: permissive mode enabled (non-production or DEV_ALLOW_ALL_ORIGINS=true)');
+    // explicit preflight handling for production
+    app.options('*', cors());
+  } else {
+    // permissive CORS in non-production or when DEV_ALLOW_ALL_ORIGINS=true
+    app.use(cors());
+    console.log('CORS: permissive mode enabled (non-production or DEV_ALLOW_ALL_ORIGINS=true)');
+  }
+} catch (e) {
+  console.error('CORS setup failed:', e && e.stack ? e.stack : e);
+  throw e; // rethrow so process exits and logs show the stack
 }
 
 app.use(bodyParser.json());
@@ -88,18 +96,33 @@ app.post('/collect', async (req, res) => {
   }
 
   try {
-    const data = {
-      ...req.body,
-      timestamp: new Date().toISOString(),
-    };
-    await collection.insertOne(data);
-    console.log('✅ Data saved:', data);
-    res.status(200).json({ message: 'Data saved successfully' });
+    const userData = { ...req.body, timestamp: new Date().toISOString() };
+
+    // --- Step 1: Send data to Flask ML API ---
+    const flaskResponse = await axios.post('http://127.0.0.1:5001/collect', userData);
+
+    // --- Step 2: Extract prediction from Flask ---
+    const { is_bot, confidence } = flaskResponse.data;
+
+    // --- Step 3: Save everything in MongoDB ---
+    await collection.insertOne({ ...userData, is_bot, confidence });
+    console.log('✅ Data + Prediction saved:', { ...userData, is_bot, confidence });
+
+    // --- Step 4: Return result to frontend ---
+    res.status(200).json({
+      message: 'Prediction complete',
+      is_bot,
+      confidence,
+    });
   } catch (err) {
-    console.error('❌ Failed to save data:', err.message);
-    res.status(500).json({ message: 'Failed to save data', error: err.message });
+    console.error('❌ Error connecting to Flask API:', err.message);
+    res.status(500).json({
+      message: 'Prediction failed',
+      error: err.message,
+    });
   }
 });
+
 
 // ✅ GET endpoint (optional)
 app.get('/api/data', async (req, res) => {
