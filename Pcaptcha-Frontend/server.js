@@ -21,22 +21,30 @@ const allowedOrigins = [
 ];
 
 // ✅ CORS configuration
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
-  })
-);
+// CORS setup: strict in production, permissive in development/test when needed.
+const devAllowAll = (process.env.DEV_ALLOW_ALL_ORIGINS || '').toLowerCase();
+if (process.env.NODE_ENV === 'production' && devAllowAll !== 'true') {
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST', 'OPTIONS'],
+      allowedHeaders: ['Content-Type'],
+    })
+  );
 
-// ✅ Explicit preflight handling
-app.options('*', cors());
+  // explicit preflight handling for production
+  app.options('*', cors());
+} else {
+  // permissive CORS in non-production or when DEV_ALLOW_ALL_ORIGINS=true
+  app.use(cors());
+  console.log('CORS: permissive mode enabled (non-production or DEV_ALLOW_ALL_ORIGINS=true)');
+}
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
