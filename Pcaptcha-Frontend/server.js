@@ -14,14 +14,34 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-  origin: ['*','https://passive-bot-detection-using-rfgb.onrender.com','https://passive-bot-detection-using-3qdu.onrender.com'] // allow all origins, you can restrict if needed
-}));
+// ✅ Allowed origins
+const allowedOrigins = [
+  'https://passive-bot-detection-using-rfgb.onrender.com',
+  'https://passive-bot-detection-using-3qdu.onrender.com',
+];
+
+// ✅ CORS configuration
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+  })
+);
+
+// ✅ Explicit preflight handling
+app.options('*', cors());
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Atlas connection
+// ✅ MongoDB Atlas connection
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
@@ -34,7 +54,7 @@ const dbName = 'botDetectionDB';
 const collectionName = 'behavioralData';
 let collection;
 
-// Start server only after DB is connected
+// ✅ Start server only after DB connection
 async function startServer() {
   try {
     await client.connect();
@@ -52,7 +72,7 @@ async function startServer() {
 
 startServer();
 
-// POST endpoint to collect data
+// ✅ POST endpoint to collect data
 app.post('/collect', async (req, res) => {
   if (!collection) {
     console.error('❌ Collection not initialized!');
@@ -73,7 +93,7 @@ app.post('/collect', async (req, res) => {
   }
 });
 
-// GET endpoint to fetch all data (optional)
+// ✅ GET endpoint (optional)
 app.get('/api/data', async (req, res) => {
   if (!collection) return res.status(500).json({ message: 'Database not connected' });
   try {
@@ -85,7 +105,7 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
-// Serve frontend
+// ✅ Serve frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

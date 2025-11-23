@@ -28,7 +28,7 @@ window.addEventListener('scroll', () => {
 // Function to send data to backend
 async function sendData(data) {
   try {
-    const response = await fetch("https://passive-bot-detection-using-3qdu.onrender.com/collect", {
+    const response = await fetch("/collect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
