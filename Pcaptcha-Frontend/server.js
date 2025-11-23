@@ -99,7 +99,7 @@ app.post('/collect', async (req, res) => {
     const userData = { ...req.body, timestamp: new Date().toISOString() };
 
     // --- Step 1: Send data to Flask ML API ---
-    const flaskResponse = await axios.post('http://127.0.0.1:5001/collect', userData);
+    const flaskResponse = await axios.post(`${process.env.PUBLIC_URL}/collect`, userData);
 
     // --- Step 2: Extract prediction from Flask ---
     const { is_bot, confidence } = flaskResponse.data;
